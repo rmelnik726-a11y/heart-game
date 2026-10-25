@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Рофл игра</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#fff0f3; --ink:#4a1626; --soft:#9b5468; --heart:#e5365b; --heart2:#ff7a93; --glow:rgba(229,54,91,.28); --card:#ffd9e1;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1d0a12; --ink:#ffe6ec; --soft:#d792a5; --heart:#ff4d73; --heart2:#ff8fa5; --glow:rgba(255,77,115,.35); --card:#3a1523;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1d0a12; --ink:#ffe6ec; --soft:#d792a5; --heart:#ff4d73; --heart2:#ff8fa5; --glow:rgba(255,77,115,.35); --card:#3a1523;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+  display:flex; justify-content:center; overflow-x:hidden; text-align:center;
+}
+main{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1.5rem;width:100%;max-width:26rem;margin:auto}
+h1{font-family:'Unbounded','Arial Black',sans-serif;font-weight:700;font-size:clamp(1.4rem,6vw,2rem);line-height:1.15;margin:0}
+p{margin:0;color:var(--soft);font-size:.95rem;line-height:1.45}
+.money{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(2rem,10vw,3rem);color:var(--heart)}
+.hp{width:100%;height:10px;border-radius:5px;background:var(--card);overflow:hidden}
+.hp i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--heart2),var(--heart));transition:width .12s}
+button.heart{
+  all:unset;cursor:pointer;width:min(60vw,15rem);aspect-ratio:1;display:grid;place-items:center;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+button.heart:focus-visible{outline:3px solid var(--heart);outline-offset:6px;border-radius:50%}
+button.heart svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 12px 28px var(--glow));animation:beat 1.4s ease-in-out infinite}
+button.heart:active svg{animation:none;transform:scale(.9)}
+.broken button.heart svg{animation:none}
+@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.08)}28%{transform:scale(1)}42%{transform:scale(1.05)}70%{transform:scale(1)}}
+#left,#right{transition:transform 1.1s cubic-bezier(.5,0,.9,.6),opacity 1.1s;transform-origin:50px 45px}
+.broken #left{transform:translate(-26px,70px) rotate(-22deg);opacity:0}
+.broken #right{transform:translate(26px,70px) rotate(22deg);opacity:0}
+.crack{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100}
+.msg{font-weight:500;min-height:1.4em;color:var(--ink)}
+.shop{display:flex;flex-direction:column;gap:.6rem;width:100%}
+.shop button{
+  font:inherit;font-weight:500;color:var(--ink);background:var(--card);border:2px solid transparent;border-radius:14px;
+  padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;gap:1rem;text-align:left;touch-action:manipulation;
+}
+.shop button:focus-visible{outline:3px solid var(--heart);outline-offset:2px}
+.shop button:disabled{opacity:.45;cursor:not-allowed}
+.shop button b{white-space:nowrap;color:var(--heart)}
+#start{display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%}
+.playing #start{display:none}
+#game{display:none;flex-direction:column;align-items:center;gap:1rem;width:100%}
+.playing #game{display:flex}
+.big{font-size:5rem;line-height:1;color:var(--heart);animation:beat 1.4s ease-in-out infinite}
+#start input{font:inherit;font-weight:500;color:var(--ink);background:var(--card);border:2px solid transparent;border-radius:14px;padding:.9rem 1rem;width:100%;text-align:center}
+#start input:focus-visible{outline:3px solid var(--heart);outline-offset:2px}
+#start .go{font-family:'Unbounded',sans-serif;font-weight:700;font-size:1.1rem;color:#fff;background:var(--heart);border:0;border-radius:14px;padding:1rem;width:100%;cursor:pointer;touch-action:manipulation}
+#start .go:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.float{position:fixed;pointer-events:none;font-family:'Unbounded',sans-serif;font-weight:700;font-size:1.1rem;color:var(--heart);animation:up 1s ease-out forwards;z-index:5}
+@keyframes up{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--dx),-9rem)}}
+@media (prefers-reduced-motion: reduce){
+  button.heart svg{animation:none}
+  .float{animation-duration:.01s}
+  #left,#right{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+<main id="app">
+  <div id="start">
+    <div class="big" aria-hidden="true">❤</div>
+    <h1>Рофл игра</h1>
+    <p>Бей, копи рубли, покупай улучшения. Как тебя зовут?</p>
+    <input id="name" type="text" value="Максим" maxlength="20" autocomplete="off" aria-label="Твоё имя">
+    <button class="go" id="go">Играть</button>
+  </div>
+  <div id="game">
+  <h1 id="title">Максим, разбей сердечко</h1>
+  <div class="money" id="money">0 ₽</div>
+  <div class="hp" aria-hidden="true"><i id="hpbar"></i></div>
+  <button class="heart" id="heart" aria-label="Бить сердечко">
+    <svg viewBox="0 0 100 90" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="var(--heart2)"/>
+          <stop offset="1" stop-color="var(--heart)"/>
+        </linearGradient>
+        <path id="shape" d="M50 86C20 62 4 46 4 27 4 14 14 4 27 4c9 0 18 5 23 13C55 9 64 4 73 4c13 0 23 10 23 23 0 19-16 35-46 59z"/>
+        <clipPath id="cl"><polygon points="-5,-5 50,-5 50,15 44,30 56,44 45,58 55,72 50,86 50,95 -5,95"/></clipPath>
+        <clipPath id="cr"><polygon points="105,-5 50,-5 50,15 44,30 56,44 45,58 55,72 50,86 50,95 105,95"/></clipPath>
+      </defs>
+      <g id="left" clip-path="url(#cl)">
+        <use href="#shape" fill="url(#g)"/>
+        <path class="crack" pathLength="100" d="M50 15L44 30L56 44L45 58L55 72L50 86"/>
+      </g>
+      <g id="right" clip-path="url(#cr)">
+        <use href="#shape" fill="url(#g)"/>
+        <path class="crack" pathLength="100" d="M50 15L44 30L56 44L45 58L55 72L50 86"/>
+      </g>
+    </svg>
+  </button>
+  <div class="msg" id="msg" aria-live="polite"></div>
+  <div class="shop">
+    <button id="buyD"><span id="tD"></span><b id="cD"></b></button>
+    <button id="buyI"><span id="tI"></span><b id="cI"></b></button>
+  </div>
+  <p>Деньги тут игровые. Настоящие я пока не печатаю.</p>
+  </div>
+</main>
+<script>
+(function(){
+  var S={money:0,lvl:1,hp:10,dl:0,il:0}, broken=false, NAME='Максим';
+  var $=function(i){return document.getElementById(i)};
+  var KEY='maxim-heart';
+  try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&typeof o.money==='number'){S.money=o.money;S.lvl=o.lvl||1;S.dl=o.dl||0;S.il=o.il||0;S.hp=o.hp||0}}}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function maxHp(){return 10+(S.lvl-1)*8}
+  function dmg(){return 1+S.dl}
+  function per(){return 1+S.il*2}
+  function cD(){return Math.round(20*Math.pow(1.7,S.dl))}
+  function cI(){return Math.round(15*Math.pow(1.7,S.il))}
+  function fmt(n){return n.toLocaleString('ru-RU')}
+  if(S.hp<=0||S.hp>maxHp())S.hp=maxHp();
+  var cracks=document.querySelectorAll('.crack');
+  function render(){
+    $('money').textContent=fmt(S.money)+' ₽';
+    $('hpbar').style.width=Math.max(0,S.hp/maxHp()*100)+'%';
+    for(var i=0;i<cracks.length;i++)cracks[i].style.strokeDashoffset=Math.max(0,100*S.hp/maxHp());
+    $('tD').textContent='Кувалда: удар '+dmg()+' → '+(dmg()+1);
+    $('cD').textContent=fmt(cD())+' ₽';
+    $('tI').textContent='Золотые руки: '+per()+' ₽ за тык → '+(per()+2);
+    $('cI').textContent=fmt(cI())+' ₽';
+    $('buyD').disabled=S.money<cD();
+    $('buyI').disabled=S.money<cI();
+    if(!broken)$('msg').textContent='Сердечко №'+S.lvl+', прочность '+Math.max(0,S.hp)+' из '+maxHp();
+  }
+  function pop(txt,e){
+    var s=document.createElement('span');
+    s.className='float';s.textContent=txt;
+    var r=$('heart').getBoundingClientRect();
+    s.style.left=(e&&e.clientX?e.clientX:r.left+r.width/2)-16+'px';
+    s.style.top=(e&&e.clientY?e.clientY:r.top+r.height/2)-16+'px';
+    s.style.setProperty('--dx',((Math.random()-.5)*60)+'px');
+    document.body.appendChild(s);
+    setTimeout(function(){s.remove()},1200);
+  }
+  $('heart').addEventListener('click',function(e){
+    if(broken)return;
+    S.hp-=dmg();S.money+=per();
+    pop('+'+per()+' ₽',e);
+    if(S.hp<=0){
+      var bonus=maxHp()*2;
+      S.money+=bonus;broken=true;S.hp=0;
+      $('app').classList.add('broken');
+      render();
+      $('msg').textContent='Разбито! Бонус +'+fmt(bonus)+' ₽. '+NAME+', тебе не стыдно?';
+      pop('+'+fmt(bonus)+' ₽',null);
+      save();
+      setTimeout(function(){
+        S.lvl++;S.hp=maxHp();broken=false;
+        $('app').classList.remove('broken');
+        render();save();
+      },1500);
+    }else{render();save()}
+  });
+  $('buyD').addEventListener('click',function(){if(S.money>=cD()){S.money-=cD();S.dl++;render();save()}});
+  $('buyI').addEventListener('click',function(){if(S.money>=cI()){S.money-=cI();S.il++;render();save()}});
+  var nm=$('name'),go=$('go');
+  try{var sn=localStorage.getItem('maxim-name');if(sn)nm.value=sn}catch(e){}
+  if(S.money>0)go.textContent='Продолжить';
+  function begin(){
+    NAME=nm.value.trim().slice(0,20)||'Максим';
+    try{localStorage.setItem('maxim-name',NAME)}catch(e){}
+    $('title').textContent=NAME+', разбей сердечко';
+    $('app').classList.add('playing');
+    render();
+  }
+  go.addEventListener('click',begin);
+  nm.addEventListener('keydown',function(e){if(e.key==='Enter')begin()});
+  render();
+})();
+</script>
+</body>
+</html>
